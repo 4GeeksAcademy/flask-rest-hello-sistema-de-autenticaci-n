@@ -145,15 +145,102 @@ def get_all_users():
         return jsonify({"msg": "There aren't any users yet"}), 404
 
 # FAVORITES
-@app.route('/users/favorites', methods=['GET'])
-def get_all_favorites():
-    query_results = Favorites.query.all()
+@app.route('/users/favorites/<int:users_id>', methods=['GET'])
+def get_all_favorites(users_id):
+    query_results = Favorites.query.filter_by(users_id=users_id).all()
     if query_results:
+        # results = [favorite.serialize() for favorite in query_results]
         results = list(map(lambda item: item.serialize(),query_results))
-        #  results = [favorite.serialize() for favorite in query_results]
+        print(results)
         return jsonify({"msg": "Ok", "results": results}), 200
     else:
         return jsonify({"msg": "There aren't any favorites yet"}), 404
+
+
+@app.route('/favorite/planet/<int:planets_id>', methods=['POST'])
+def add_favorite_planet(planets_id):
+    data = request.json
+    user_exist = Users.query.filter_by(id=data["users_id"]).first()
+    planet_exist = Planets.query.filter_by(id=data["planets_id"]).first()
+
+    if user_exist and planet_exist:
+        query_results = Favorites.query.filter_by(planets_id=data["planets_id"], users_id=data["users_id"]).first()
+        print(query_results)
+        if query_results is None:
+            new_favorite = Favorites(planets_id=data["planets_id"], users_id=data["users_id"])
+            db.session.add(new_favorite)
+            db.session.commit()
+            return ({"msg": "Ok"}),200
+        else:
+             return ({"msg": "Favorites already exists"}), 200
+        
+    elif user_exist is None and planet_exist is None:
+        return ({"msg": "There aren't users or planets"}), 400 
+    elif user_exist is None:
+        return ({"msg": "This user doesn't exist"}), 400
+    elif planet_exist is None:
+        return ({"msg": "This planet doesn't exist"}), 400
+
+@app.route('/favorite/people/<int:people_id>', methods=['POST'])
+def add_favorite_people(people_id):
+    data = request.json
+    user_exist = Users.query.filter_by(id=data["users_id"]).first()
+    planet_exist = People.query.filter_by(id=data["people_id"]).first()
+
+    if user_exist and planet_exist:
+        query_results = Favorites.query.filter_by(people_id=data["people_id"], users_id=data["users_id"]).first()
+        print(query_results)
+        if query_results is None:
+            new_favorite = Favorites(people_id=data["people_id"], users_id=data["users_id"])
+            db.session.add(new_favorite)
+            db.session.commit()
+            return ({"msg": "Ok"}),200
+        else:
+             return ({"msg": "Favorites already exists"}), 200
+        
+    elif user_exist is None and people_id is None:
+        return ({"msg": "There aren't users or people"}), 400 
+    elif user_exist is None:
+        return ({"msg": "This user doesn't exist"}), 400
+    elif planet_exist is None:
+        return ({"msg": "This people doesn't exist"}), 400
+
+
+# [DELETE] /favorite/planet/<int:planet_id>
+@app.route('/favorite/planet/<int:planets_id>', methods=['DELETE'])
+def delete_favorite_planet(planets_id):
+    data = request.json
+    user_exist = Users.query.filter_by(id=data["users_id"]).first()
+    planet_exist = Planets.query.filter_by(id=data["planets_id"]).first()
+
+    if planet_exist and user_exist:
+        query_results = Favorites.query.filter_by(planets_id=data["planets_id"], users_id=data["users_id"]).first()
+        print(query_results)
+        if query_results:
+            db.session.delete(query_results)
+            db.session.commit()
+            return ({"msg": "Favorite deleted"}),200
+        else: return ({"msg": "This favorite doesn't exist"}),404
+        
+    elif user_exist is None and planet_exist is None:
+        return ({"msg": "There aren't users or planets"}), 400 
+    elif user_exist is None:
+        return ({"msg": "This user doesn't exist"}), 400
+    elif planet_exist is None:
+        return ({"msg": "This planet doesn't exist"}), 400
+    
+# [DELETE] /favorite/people/<int:people_id>
+@app.route('/favorite/people/<int:people_id>/<int:users_id>', methods=['DELETE'])
+def delete_favorite_people(people_id, users_id):
+        query_results = Favorites.query.filter_by(people_id=people_id, users_id=users_id).first()
+        print(query_results)
+        if query_results:
+            db.session.delete(query_results)
+            db.session.commit()
+            return ({"msg": "Ok. Favorite people deleted"}),200
+        else:
+             return ({"msg": "Favorites doesn't exists"}), 200
+    
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
