@@ -231,16 +231,42 @@ def delete_favorite_planet(planets_id):
     
 # [DELETE] /favorite/people/<int:people_id>
 @app.route('/favorite/people/<int:people_id>/<int:users_id>', methods=['DELETE'])
-def delete_favorite_people(people_id, users_id):
+def delete_favorite_people_user(people_id, users_id):
+    user_exist = Users.query.filter_by(id=users_id).first()
+    people_exist = People.query.filter_by(id=people_id).first()
+
+    if user_exist and people_exist:
         query_results = Favorites.query.filter_by(people_id=people_id, users_id=users_id).first()
         print(query_results)
+   
         if query_results:
             db.session.delete(query_results)
             db.session.commit()
-            return ({"msg": "Ok. Favorite people deleted"}),200
+            return ({"msg": "Deleted succesfull"}), 200
         else:
-             return ({"msg": "Favorites doesn't exists"}), 200
-    
+            return ({"msg": "Character already deleted"}), 200
+        
+    elif user_exist is None and people_exist is None:
+        return ({"msg": "There aren't users or characters to delete"}), 400
+  
+    elif user_exist is None:
+        return ({"msg": "This user doesn't exist"}), 400
+
+    elif people_exist is None:
+        return ({"msg": "This character doesn't exist"}), 400
+
+# [PUT] /people/<int:people_id>
+@app.route('/people/<int:people_id>', methods=['PUT'])
+def update_people(people_id):
+        new_data = request.json
+        query_results = People.query.filter_by(id=people_id).first()
+        print(query_results)
+        if query_results:
+            for key, value in new_data.items():
+                setattr(query_results, key, value)
+            db.session.commit()
+            return ({"msg": "People updated"}), 200
+        else: return ({"msg": "People can't updated"}), 404    
 
 # this only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
